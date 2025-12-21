@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -9,24 +10,23 @@ import mlflow.sklearn
 # =========================
 # Konfigurasi
 # =========================
-path = "dataset_mesin_membangun_sistem_machine_learning_preprocessing.csv"
-experiment_name = "Student Performance - Modelling"
+DATA_PATH = "dataset_mesin_membangun_sistem_machine_learning_preprocessing.csv"
+EXPERIMENT_NAME = "Student Performance - Modelling"
+RUN_ID_PATH = "MLProject/run_id.txt"
 
 
 def run_model():
-
     # =========================
     # MLflow setup
     # =========================
-    mlflow.set_experiment(experiment_name)
+    mlflow.set_experiment(EXPERIMENT_NAME)
 
-    mlflow.sklearn.autolog()
     print("Training dimulai...")
 
     # =========================
     # Load dataset
     # =========================
-    df = pd.read_csv(path)
+    df = pd.read_csv(DATA_PATH)
     print("Dataset berhasil diload")
 
     # =========================
@@ -43,15 +43,9 @@ def run_model():
     )
 
     # =========================
-    # Training
+    # Training (SATU RUN SAJA)
     # =========================
     with mlflow.start_run(run_name="RandomForest-Baseline") as run:
-        run_id = run.info.run_id
-        with open("run_id.txt", "w") as f:
-            f.write(run_id)
-
-        print(f"Run ID disimpan: {run_id}")
-
         model = RandomForestRegressor(
             n_estimators=100,
             random_state=42
@@ -79,7 +73,7 @@ def run_model():
         print("R2  :", r2)
 
         # =========================
-        # Log model
+        # Log model (WAJIB)
         # =========================
         mlflow.sklearn.log_model(
             sk_model=model,
@@ -88,6 +82,15 @@ def run_model():
         )
 
         print("Model berhasil disimpan sebagai artifact MLflow")
+
+        # =========================
+        # Simpan run_id SETELAH model berhasil di-log
+        # =========================
+        os.makedirs("MLProject", exist_ok=True)
+        with open(RUN_ID_PATH, "w") as f:
+            f.write(run.info.run_id)
+
+        print(f"Run ID disimpan ke {RUN_ID_PATH}: {run.info.run_id}")
 
 
 if __name__ == "__main__":
