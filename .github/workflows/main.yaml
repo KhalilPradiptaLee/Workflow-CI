@@ -60,8 +60,9 @@ jobs:
         RUN_ID=$(cat MLProject/run_id.txt)
         echo "Building Docker image from RUN_ID=$RUN_ID"
         mlflow models build-docker \
-          -m runs:/${RUN_ID}/model \
+          -m runs:/$RUN_ID/model \
           -n ${{ secrets.DOCKERHUB_USERNAME }}/student-performance-mlflow
+
 
     - name: Push Docker image to Docker Hub
       run: |
