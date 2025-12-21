@@ -61,8 +61,8 @@ jobs:
         echo "Building Docker image from RUN_ID=$RUN_ID"
         mlflow models build-docker \
           -m runs:/${RUN_ID}/model \
-          -n ${{ secrets.DOCKER_USERNAME }}/student-performance-mlflow
+          -n ${{ secrets.DOCKERHUB_USERNAME }}/student-performance-mlflow
 
     - name: Push Docker image to Docker Hub
       run: |
-        docker push ${{ secrets.DOCKER_USERNAME }}/student-performance-mlflow
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/student-performance-mlflow
