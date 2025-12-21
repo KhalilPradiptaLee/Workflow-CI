@@ -13,6 +13,12 @@ import mlflow.sklearn
 DATA_PATH = "dataset_mesin_membangun_sistem_machine_learning_preprocessing.csv"
 EXPERIMENT_NAME = "Student Performance - Modelling"
 RUN_ID_PATH = "run_id.txt"
+mlflow.set_tracking_uri(
+    os.environ.get(
+        "MLFLOW_TRACKING_URI",
+        "file:./mlruns"
+    )
+)
 
 def run_model():
     # =========================
@@ -94,4 +100,5 @@ def run_model():
 
 if __name__ == "__main__":
     run_model()
+
 
