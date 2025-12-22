@@ -1,4 +1,4 @@
-name: student-performance-mlflow-ci
+name: CI/CD Pipeline Final
 
 on:
   push:
@@ -6,53 +6,52 @@ on:
   workflow_dispatch:
 
 jobs:
-  train-and-docker:
+  train-and-deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup Python
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.10"
 
-    - name: Setup Miniconda
-      uses: conda-incubator/setup-miniconda@v3
-      with:
-        auto-update-conda: true
-        python-version: "3.10"
-
-    - name: Install MLflow
+    - name: Install Dependencies
       run: |
         pip install --upgrade pip
         pip install mlflow
+        pip install -r MLProject/requirements.txt
 
     # ===============================
     # Run Training as MLflow Project
     # ===============================
-    - name: Run Training with MLflow Project
-      shell: "bash -l {0}"
+    - name: Run MLflow Project
       run: |
-        mlflow run MLProject
+        cd MLProject
+        mlflow run . \
+          --env-manager=local \
+          --experiment-name "Student Performance - Modelling"
 
     # ===============================
-    # Debug
+    # Upload mlruns (artifact)
     # ===============================
-    - name: Debug MLProject files
-      run: |
-        ls -la MLProject
-        cat MLProject/run_id.txt
-
-    # ===============================
-    # Upload mlruns (OPSIONAL tapi aman)
-    # ===============================
-    - name: Upload MLflow artifacts
+    - name: Upload MLflow Artifacts
       uses: actions/upload-artifact@v4
+      if: always()
       with:
         name: mlruns
         path: MLProject/mlruns/
+
+    # ===============================
+    # Get Run ID
+    # ===============================
+    - name: Get MLflow run_id
+      run: |
+        RUN_ID=$(cat MLProject/run_id.txt)
+        echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
+        echo "Run ID: $RUN_ID"
 
     # ===============================
     # Login Docker Hub
@@ -61,21 +60,25 @@ jobs:
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     # ===============================
     # Build Docker Image
     # ===============================
-    - name: Build Docker image with MLflow
+    - name: Build Docker Image with MLflow
+      env:
+        MLFLOW_TRACKING_URI: file:./MLProject/mlruns
       run: |
-        cd MLProject
-        RUN_ID=$(cat run_id.txt)
-
         mlflow models build-docker \
-          -m runs:/${RUN_ID}/model \
-          -n ${{ secrets.DOCKERHUB_USERNAME }}/student-performance-mlflow \
+          --model-uri "runs:/${{ env.RUN_ID }}/model" \
+          --name "student-performance-mlflow" \
           --enable-mlserver
 
-    - name: Push Docker image to Docker Hub
+    - name: Tag Docker Image
       run: |
-        docker push ${{ secrets.DOCKERHUB_USERNAME }}/student-performance-mlflow
+        docker tag student-performance-mlflow \
+          ${{ secrets.DOCKERHUB_USERNAME }}/student-performance-mlflow:latest
+
+    - name: Push Docker Image
+      run: |
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/student-performance-mlflow:latest
