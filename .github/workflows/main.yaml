@@ -33,6 +33,7 @@ jobs:
     # Run Training as MLflow Project
     # ===============================
     - name: Run Training with MLflow Project
+      shell: "bash -l {0}"
       run: |
         mlflow run MLProject
 
