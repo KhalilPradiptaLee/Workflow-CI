@@ -1,6 +1,5 @@
 name: student-performance-mlflow-ci
 
-
 entry_points:
   main:
     command: "python modelling.py"
