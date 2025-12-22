@@ -10,38 +10,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # ===============================
-    # Checkout
-    # ===============================
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # ===============================
-    # Setup Python
-    # ===============================
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.10"
 
-    # ===============================
-    # Install dependencies
-    # ===============================
-    - name: Install dependencies
+    # Install MLflow (WAJIB)
+    - name: Install MLflow
       run: |
         pip install --upgrade pip
-        pip install -r MLProject/requirements.txt
+        pip install mlflow
 
     # ===============================
-    # Run Training (MLflow LOCAL)
+    # Run Training as MLflow Project
     # ===============================
-    - name: Run Training Script (MLflow local)
+    - name: Run Training with MLflow Project
       run: |
-        cd MLProject
-        python modelling.py
+        mlflow run MLProject
 
     # ===============================
-    # Debug (PASTIIN FILE ADA)
+    # Debug
     # ===============================
     - name: Debug MLProject files
       run: |
@@ -67,22 +58,18 @@ jobs:
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
     # ===============================
-    # Build Docker Image (DARI LOCAL)
+    # Build Docker Image
     # ===============================
     - name: Build Docker image with MLflow
       run: |
         cd MLProject
         RUN_ID=$(cat run_id.txt)
-        echo "Building image from RUN_ID=$RUN_ID"
 
         mlflow models build-docker \
           -m runs:/${RUN_ID}/model \
           -n ${{ secrets.DOCKERHUB_USERNAME }}/student-performance-mlflow \
           --enable-mlserver
 
-    # ===============================
-    # Push Image
-    # ===============================
     - name: Push Docker image to Docker Hub
       run: |
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/student-performance-mlflow
